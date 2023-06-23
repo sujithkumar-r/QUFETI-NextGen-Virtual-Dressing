@@ -70,29 +70,34 @@ def cords_to_map(cords, img_size, old_size=None, affine_matrix=None, sigma=6):
     return result
 
 
-def draw_pose_from_cords(pose_joints, img_size, radius=2, draw_joints=True):
-    colors = np.zeros(shape=img_size + (3, ), dtype=np.uint8)
-    mask = np.zeros(shape=img_size, dtype=bool)
+def draw_pose_from_cords(pose_joints, img_size, radius, draw_joints=True):
+    COLORS = np.array([[255, 0, 0], [255, 85, 0], [255, 170, 0], [255, 255, 0], [170, 255, 0], [85, 255, 0], [0, 255, 0],
+                       [0, 255, 85], [0, 255, 170], [0, 255, 255], [0, 170, 255], [0, 85, 255], [0, 0, 255],
+                       [85, 0, 255], [170, 0, 255], [255, 0, 255], [255, 0, 170], [255, 0, 85]])
 
-    if draw_joints:
-        for f, t in LIMB_SEQ:
-            from_missing = pose_joints[f][0] == MISSING_VALUE or pose_joints[f][1] == MISSING_VALUE
-            to_missing = pose_joints[t][0] == MISSING_VALUE or pose_joints[t][1] == MISSING_VALUE
-            if from_missing or to_missing:
-                continue
-            yy, xx, val = line_aa(pose_joints[f][0], pose_joints[f][1], pose_joints[t][0], pose_joints[t][1])
-            colors[yy, xx] = np.expand_dims(val, 1) * 255
-            mask[yy, xx] = True
+    MISSING_VALUE = 0
+
+    if isinstance(pose_joints, list):
+        pose_joints = np.array(pose_joints)
+
+    colors = np.zeros((img_size[0], img_size[1], 3), dtype=np.uint8)
+    mask = np.zeros((img_size[0], img_size[1]), dtype=bool)
 
     for i, joint in enumerate(pose_joints):
         if pose_joints[i][0] == MISSING_VALUE or pose_joints[i][1] == MISSING_VALUE:
             continue
-        rr, cc = disk((joint[0], joint[1]), radius, shape=img_size)  # Corrected line
-        colors[rr, cc] = COLORS[i]
-        mask[rr, cc] = True
+        yy, xx = disk(joint[0], joint[1], radius=radius, shape=img_size)
+        colors[yy, xx] = COLORS[i]
+        mask[yy, xx] = True
+
+    if draw_joints:
+        for i, joint in enumerate(pose_joints):
+            if pose_joints[i][0] == MISSING_VALUE or pose_joints[i][1] == MISSING_VALUE:
+                continue
+            colors = cv2.circle(colors, (int(joint[0]), int(joint[1])), radius=radius, color=COLORS[i].tolist(),
+                                thickness=-1)
 
     return colors, mask
-
 
 def draw_pose_from_map(pose_map, threshold=0.1, **kwargs):
     cords = map_to_cord(pose_map, threshold=threshold)
