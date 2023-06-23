@@ -1,8 +1,7 @@
 import numpy as np
-from scipy.ndimage.filters import gaussian_filter
-from skimage.draw import disk, line_aa, polygon
+import cv2
+import os
 import json
-
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -10,6 +9,10 @@ import matplotlib.patches as mpatches
 from collections import defaultdict
 import skimage.measure, skimage.transform
 import sys
+from scipy.ndimage.filters import gaussian_filter
+from skimage.draw import disk, line_aa, polygon
+import pandas as pd
+from skimage.io import imread
 
 LIMB_SEQ = [[1,2], [1,5], [2,3], [3,4], [5,6], [6,7], [1,8], [8,9],
            [9,10], [1,11], [11,12], [12,13], [1,0], [0,14], [14,16],
@@ -94,7 +97,7 @@ def draw_pose_from_cords(pose_joints, img_size, radius, draw_joints=True):
         for i, joint in enumerate(pose_joints):
             if pose_joints[i][0] == MISSING_VALUE or pose_joints[i][1] == MISSING_VALUE:
                 continue
-            colors = cv2.circle(colors, (int(joint[0]), int(joint[1])), radius=radius, color=COLORS[i].tolist(),
+            colors = cv2.disk(colors, (int(joint[0]), int(joint[1])), radius=radius, color=COLORS[i].tolist(),
                                 thickness=-1)
 
     return colors, mask
